@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Aromatic Membrane Insertion Predictor</title>
+  <style>
+    body {
+      font-family: "Times New Roman", serif;
+      padding: 20px;
+      background-color: white;
+      /*color: #222;*/
+    }
+    h2 {
+      color: #3b3b98;
+    }
+    p.description {
+      font-size: 18px;
+      margin-top: -10px;
+      margin-bottom: 20px;
+    }
+    input, button, textarea {
+      font-size: 16px;
+      margin-top: 10px;
+      width: 100%;
+      font-family: "Times New Roman", serif;
+    }
+    button {
+      background-color: #6c5ce7;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #4834d4;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      font-family: "Times New Roman", serif;
+    }
+    th, td {
+      border: 1px solid #999;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background: #dfe6e9;
+      color: #2d3436;
+    }
+    tr:nth-child(even) {
+      background-color: #f1f2f6;
+    }
+    tr:nth-child(odd) {
+      background-color: #ffffff;
+    }
+    #figure-container {
+      margin-top: 30px;
+      text-align: center;
+    }
+    #figure-container img {
+      max-width: 80%;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    #figure-container figcaption {
+      font-style: italic;
+      color: #636e72;
+    }
+  </style>
+</head>
+<body>
+
+<h2>AroMIP: A predictor of membrane insertion by aromatic-centered motifs of intrinsically disordered proteins</h2>
+
+<div id="figure-container">
+  <figure>
+    <img src="images/AroMIP.png" alt="Membrane Protein Diagram">
+  </figure>
+</div>
+
+<section style="margin-top: 20px; background: #f9f9f9; padding: 15px;">
+  <h3>Method at a Glance</h3>
+  <p>
+AroMIP scans a given protein sequence for 9-residue fragments centered on an aromatic residue (F, W, Y), and predicts whether the
+aromatic sidechain in each fragment inserts into the acyl chain region of membranes. The prediction is based on a mathematical model,
+where each flanking residue contributes a multiplicative factor to the membrane insertion score of the central aromatic residue. The model
+was trained on the intrinsically disordered regions of the human proteome.
+  </p>
+  <h3>Reference</h3>
+  <ul>
+  <li>Fidha Kunnath Muhammedkutty and Huan-Xiang Zhou (2026), A membrane insertion code for intrinsically disordered proteins, bioRxiv.</li>
+  </ul>
+
+</section>
+
+
+<label for="proteinInput"><strong>Enter Protein Sequence:</strong></label>
+<textarea id="proteinInput" rows="4" placeholder="Example: RRNKFGINRTTGNWRGMLQRDLYSGLN"></textarea>
+
+<div style="margin-top: 15px;">
+  <button onclick="runPrediction()">Predict!</button>
+  <button onclick="clearEntry()">Clear Entry</button>
+  <button onclick="loadExample()">Input Example</button>
+</div>
+
+
+<div id="results"></div>
+
+
+<script>
+// Generalized sigmoid function
+function Sigmoid(Q) {
+  if (Q <= 0) return 0.0;
+  return Q / (1 + Q);
+}
+
+// Predict insertion likelihood for a fragment
+function modelPrediction(fragment, paramData) {
+  const { params } = paramData;
+  let product = 1.0;
+
+  for (let i = 0; i < fragment.length; i++) {
+    if (i === 4) continue;
+    const aa = fragment[i];
+    if (!(aa in params)) continue;
+    product *= Math.max(1e-8, params[aa]);
+  }
+  return { Q: product, score: Sigmoid(product) };
+}
+
+// Scan full protein sequence
+function scanProteinSequence(sequence) {
+  const results = [];
+  const centerAASet = new Set(["F", "W", "Y"]);
+  sequence = sequence.toUpperCase();
+
+  const paramSets = {
+    F: {
+      params: {
+		A : 1.0758068943930996,
+		C : 0.7515081115208946,
+		D : 0.4098861523565832,
+		E : 0.3983119844300048,
+		F : 8.1603925477323100,
+		G : 0.6354157796571205,
+		H : 0.7846691451344266,
+		I : 3.1491216060357460,
+		K : 1.1009251977458419,
+		L : 3.6046544612488423,
+		M : 2.8653319073560772,
+		N : 0.4803481572211203,
+		P : 1.7694984669210487,
+		Q : 0.4933503638424146,
+		R : 1.6585225219886708,
+		S : 0.9301680536402084,
+		T : 1.2417197033480494,
+		V : 2.0355593428760814,
+		W : 5.9063068700289690,
+		Y : 1.8801996532692813
+      }
+    },
+    W: {
+      params: {
+        A : 1.0206442786302903,
+		C : 0.6708211019772945,
+		D : 0.3925586374549908,
+		E : 0.4000948935406380,
+		F : 12.4315596752144760,
+		G : 0.5956514706239270,
+		H : 0.7191760324420514,
+		I : 2.9251386801066905,
+		K : 1.0112142249802383,
+		L : 4.0861358235697650,
+		M : 2.8506481939604393,
+		N : 0.4732539101826204,
+		P : 1.6093272013276745,
+		Q : 0.4767325148760477,
+		R : 1.4493178760361400,
+		S : 0.9053164338059225,
+		T : 1.1254876583549318,
+		V : 2.0417309116628624,
+		W : 11.5571567222502710,
+		Y : 1.9236800785696822
+      }
+    },
+    Y: {
+      params: {
+		A : 0.6230184781505200,
+		C : 0.0133352143216332,
+		D : 0.2214359322487689,
+		E : 0.3402031615640565,
+		F : 2.1219401227664230,
+		G : 0.3466014548722871,
+		H : 0.2072649540790862,
+		I : 1.7025466417820883,
+		K : 0.5832851280298242,
+		L : 1.5741986228306597,
+		M : 0.9020719922136957,
+		N : 0.2975325873058723,
+		P : 0.9559854615896372,
+		Q : 0.4220647091504225,
+		R : 1.1369649667516084,
+		S : 0.4189210011424207,
+		T : 0.5604827271090070,
+		V : 1.0606855747783748,
+		W : 1.7911226699514830,
+		Y : 1.2730210580996608
+      }
+    }
+  };
+
+  for (let i = 4; i < sequence.length - 4; i++) {
+    const fragment = sequence.slice(i - 4, i + 5);
+    const centerAA = fragment[4];
+
+    if (!centerAASet.has(centerAA)) continue;
+
+    const paramData = paramSets[centerAA];
+    const { Q, score } = modelPrediction(fragment, paramData);
+    const classification = score > 0.5 ? 1 : 0;
+
+    results.push({ fragment, Q: Q.toFixed(3), classification, score: score.toFixed(3) });
+  }
+
+  return results;
+}
+
+// Run prediction and render output
+function runPrediction() {
+  const input = document.getElementById("proteinInput").value.trim();
+  const results = scanProteinSequence(input);
+  const output = document.getElementById("results");
+
+  if (results.length === 0) {
+    output.innerHTML = "<p>No valid 9-residue fragments found centered on F, W, or Y.</p>";
+    return;
+  }
+
+  let html = "<table><tr><th>Motif</th><th>Membrane-insertion propensity (P)</th><th>Prediction</th></tr>";
+  results.forEach(r => {
+    const label = r.classification === 1 ? "Inserter" : "Non-inserter";
+    html += `<tr><td>${r.fragment}</td><td>${r.score}</td><td>${label}</td></tr>`;
+  });
+  html += "</table>";
+  output.innerHTML = html;
+}
+function clearEntry() {
+  document.getElementById("proteinInput").value = "";
+  document.getElementById("results").innerHTML = "";
+}
+
+function loadExample() {
+  const example = "RRNKFGINRTTGNWRGMLQRDLYSGLN";
+  document.getElementById("proteinInput").value = example;
+  runPrediction();
+}
+
+
+</script>
+
+</body>
+</html>
+
