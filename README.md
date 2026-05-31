@@ -90,6 +90,3 @@ If you use AroMIP in your research, please cite:
 **Fidha Nazreen Kunnath Muhammedkutty**  
 PhD Candidate, Department of Chemistry  
 University of Illinois Chicago  
-[fnazreenkunnath@gmail.com](mailto:fnazreenkunnath@gmail.com)
-
-Advisor: **Prof. Huan-Xiang Zhou** — [Zhou Group, UIC](https://zhougroup-uic.github.io/)
