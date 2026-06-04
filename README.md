@@ -75,6 +75,17 @@ The model parameters were trained separately for **F**, **W**, and **Y** as the 
 
 ---
 
+## Training Code & Data
+
+The model parameters and datasets used to build AroMIP are available in the [`codes/`](codes/) folder:
+
+- **`codes/5letter/`** — training convergence study on a fully enumerated synthetic dataset (5-letter reduced alphabet, ~390 k sequences per aromatic)
+- **`codes/HumanProteomeIDRs/`** — train/test scripts on 9-residue windows from human proteome IDRs (full 20-AA alphabet, pre-split 80/20)
+
+See [`codes/README.md`](codes/README.md) for full details on the model, datasets, and how to run the scripts.
+
+---
+
 ## Citation
 
 If you use AroMIP in your research, please cite:
